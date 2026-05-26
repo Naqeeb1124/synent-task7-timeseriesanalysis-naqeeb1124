@@ -24,7 +24,11 @@ print(f"Downloading {STOCK_TICKER} price data...")
 df = yf.download(STOCK_TICKER, start=START_DATE, end=END_DATE)
 
 # Keep only the Adjusted Close price
-ts = df["Adj Close"].dropna()
+if "Adj Close" in df.columns:
+    ts = df["Adj Close"].dropna()
+else:
+    ts = df["Close"].dropna()
+
 
 ts.index = pd.to_datetime(ts.index)
 
@@ -64,7 +68,8 @@ try:
     from prophet import Prophet
     print("Running forecast with Prophet (next 180 days)...")
     # Prepare data for Prophet
-    prophet_df = ts.reset_index().rename(columns={"Date": "ds", "Adj Close": "y"})
+    prophet_df = ts.reset_index()
+    prophet_df.columns = ["ds", "y"]
     model = Prophet(yearly_seasonality=True, daily_seasonality=False, weekly_seasonality=False)
     model.fit(prophet_df)
     future = model.make_future_dataframe(periods=180)
